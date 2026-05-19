@@ -54,9 +54,9 @@ export function DashboardScreen() {
         return;
       case 'budget':
         setPhase('wrap_up');
-        applyTurn();
         return;
       case 'wrap_up': {
+        applyTurn();
         const shouldElection = rollOpposition();
         if (shouldElection) {
           triggerElection();
@@ -88,7 +88,7 @@ export function DashboardScreen() {
       case 'budget':
         return '予算フェーズ';
       case 'wrap_up':
-        return '指標更新済み — ターン終了へ';
+        return 'ターン終了で指標を反映';
     }
   })();
 
