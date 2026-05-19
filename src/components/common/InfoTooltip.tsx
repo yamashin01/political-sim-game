@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useRef, useState } from 'react';
+import { type ReactNode, useEffect, useId, useRef, useState } from 'react';
 
 interface InfoTooltipProps {
   /** ツールチップに表示する内容 */
@@ -15,6 +15,7 @@ interface InfoTooltipProps {
 export function InfoTooltip({ content, label }: InfoTooltipProps) {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLSpanElement>(null);
+  const tooltipId = useId();
 
   useEffect(() => {
     if (!open) return;
@@ -41,6 +42,7 @@ export function InfoTooltip({ content, label }: InfoTooltipProps) {
         onClick={() => setOpen((v) => !v)}
         aria-label={`${label}の説明を表示`}
         aria-expanded={open}
+        aria-describedby={open ? tooltipId : undefined}
         className="group inline-flex items-center justify-center h-4 w-4 ml-0.5 leading-none focus:outline-none focus-visible:ring-2 focus-visible:ring-vermilion"
       >
         <span
@@ -52,8 +54,9 @@ export function InfoTooltip({ content, label }: InfoTooltipProps) {
       </button>
       {open && (
         <span
+          id={tooltipId}
           role="tooltip"
-          className="absolute left-1/2 top-full z-50 mt-2 w-64 -translate-x-1/2 border border-ink bg-paper text-ink shadow-[3px_3px_0_-1px_hsl(var(--ink))] before:absolute before:-top-[6px] before:left-1/2 before:-translate-x-1/2 before:h-2 before:w-2 before:border-l before:border-t before:border-ink before:bg-paper before:rotate-45"
+          className="absolute left-1/2 top-full z-50 mt-2 w-64 max-w-[calc(100vw-2rem)] -translate-x-1/2 border border-ink bg-paper text-ink shadow-[3px_3px_0_-1px_hsl(var(--ink))] before:absolute before:-top-[6px] before:left-1/2 before:-translate-x-1/2 before:h-2 before:w-2 before:border-l before:border-t before:border-ink before:bg-paper before:rotate-45"
         >
           <span className="block px-3 pt-1 pb-0 text-[10px] smallcaps font-mono tabular tracking-widest text-vermilion border-b border-ink/40">
             ※ 脚注 · {label}

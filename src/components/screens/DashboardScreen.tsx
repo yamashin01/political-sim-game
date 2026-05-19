@@ -5,6 +5,7 @@ import { REGISTRY } from '@/data/registry';
 import { rollEventsForTurn } from '@/engine/event';
 import { useGameStore } from '@/stores/gameStore';
 import { useUiStore } from '@/stores/uiStore';
+import type { ReactNode } from 'react';
 
 const PHASE_ORDER = ['event', 'policy', 'budget', 'wrap_up'] as const;
 const PHASE_LABELS: Record<(typeof PHASE_ORDER)[number], string> = {
@@ -322,7 +323,7 @@ export function DashboardScreen() {
 
 interface MetricRowProps {
   label: string;
-  tooltip: React.ReactNode;
+  tooltip: ReactNode;
   value: number | null;
   emptyLabel?: string;
 }
