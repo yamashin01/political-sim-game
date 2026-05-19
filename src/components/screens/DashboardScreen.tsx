@@ -38,6 +38,8 @@ export function DashboardScreen() {
   if (!player) return null;
 
   const handleNext = () => {
+    // 連打・ダブルクリックでクロージャ越しの古いフェーズが二重実行されるのを防ぐ
+    if (useUiStore.getState().currentPhase !== currentPhase) return;
     switch (currentPhase) {
       case 'event': {
         if (queue.length > 0) {
@@ -108,7 +110,7 @@ export function DashboardScreen() {
             : currentPhase === 'policy'
               ? '予算フェーズへ'
               : currentPhase === 'budget'
-                ? '指標更新へ'
+                ? 'ターン終了へ'
                 : 'ターン終了',
         onClick: handleNext,
       }}
