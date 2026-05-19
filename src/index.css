@@ -4,48 +4,44 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 221.2 83.2% 53.3%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
-    --radius: 0.5rem;
-  }
+    /* ─── Broadsheet palette ─────────────────────────────────────── */
+    --paper: 40 30% 92%; /* #F1ECDE 新聞紙クリーム */
+    --paper-deep: 38 22% 85%; /* #E4DBC7 深い余白色   */
+    --paper-edge: 34 18% 78%; /* 罫の地              */
+    --ink: 22 14% 9%; /* #1A1614 墨           */
+    --ink-soft: 25 18% 26%; /* #4E4233 薄墨         */
+    --ink-faint: 28 14% 48%; /* 副情報              */
+    --vermilion: 355 60% 42%; /* #AB2934 朱印         */
+    --vermilion-deep: 355 70% 30%;
+    --gold: 42 45% 42%; /* #A48A3F 金           */
+    --rule: 22 14% 16%; /* #322920 罫線         */
 
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 48%;
+    /* ─── shadcn 互換マッピング ──────────────────────────────────── */
+    --background: var(--paper);
+    --foreground: var(--ink);
+    --card: var(--paper);
+    --card-foreground: var(--ink);
+    --popover: var(--paper);
+    --popover-foreground: var(--ink);
+    --primary: var(--vermilion);
+    --primary-foreground: var(--paper);
+    --secondary: var(--paper-deep);
+    --secondary-foreground: var(--ink);
+    --muted: var(--paper-deep);
+    --muted-foreground: var(--ink-faint);
+    --accent: var(--paper-deep);
+    --accent-foreground: var(--ink);
+    --destructive: var(--vermilion-deep);
+    --destructive-foreground: var(--paper);
+    --border: var(--rule);
+    --input: var(--rule);
+    --ring: var(--vermilion);
+    --radius: 0px;
+
+    /* ─── Typography stacks ─────────────────────────────────────── */
+    --font-display: "Shippori Mincho B1", "Noto Serif JP", "Hiragino Mincho ProN", serif;
+    --font-serif: "Noto Serif JP", "Shippori Mincho B1", "Hiragino Mincho ProN", serif;
+    --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", monospace;
   }
 }
 
@@ -53,9 +49,212 @@
   * {
     @apply border-border;
   }
+
+  html,
+  body,
+  #root {
+    background-color: hsl(var(--paper));
+  }
+
   body {
-    @apply bg-background text-foreground;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Hiragino Sans',
-      'Hiragino Kaku Gothic ProN', 'Noto Sans JP', 'Yu Gothic UI', system-ui, sans-serif;
+    @apply text-foreground;
+    font-family: var(--font-serif);
+    font-feature-settings: "palt" 1, "pkna" 1;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    background-color: hsl(var(--paper));
+
+    /* Paper grain: layered SVG fractal noise + warm wash */
+    background-image: radial-gradient(
+        ellipse at 20% 8%,
+        hsl(var(--paper) / 0.0) 0%,
+        hsl(var(--paper-edge) / 0.55) 100%
+      ),
+      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' seed='4' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.16  0 0 0 0 0.13  0 0 0 0 0.10  0 0 0 0.22 0'/></filter><rect width='100%' height='100%' filter='url(%23n)' opacity='0.55'/></svg>");
+    background-blend-mode: multiply, normal;
+  }
+
+  ::selection {
+    background: hsl(var(--vermilion) / 0.85);
+    color: hsl(var(--paper));
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+
+  /* High-contrast focus ring befitting a broadsheet */
+  :focus-visible {
+    outline: 2px solid hsl(var(--vermilion));
+    outline-offset: 2px;
+  }
+}
+
+@layer utilities {
+  /* ─── Broadsheet-specific helpers ─────────────────────────────── */
+  .font-display {
+    font-family: var(--font-display);
+  }
+  .font-serif-jp {
+    font-family: var(--font-serif);
+  }
+  .font-mono {
+    font-family: var(--font-mono);
+  }
+
+  /* Double rule (二重罫線) for top of column / section breaks */
+  .rule-double {
+    border-top: 1px solid hsl(var(--rule));
+    box-shadow: 0 3px 0 -2px hsl(var(--rule));
+  }
+  .rule-double-b {
+    border-bottom: 1px solid hsl(var(--rule));
+    box-shadow: 0 3px 0 -2px hsl(var(--rule));
+  }
+  /* Thicker top rule */
+  .rule-thick {
+    border-top: 3px solid hsl(var(--ink));
+  }
+
+  /* Vertical text label (縦書き) for marginalia */
+  .tategaki {
+    writing-mode: vertical-rl;
+    text-orientation: upright;
+    letter-spacing: 0.18em;
+  }
+
+  /* Section eyebrow label — small uppercase tracking */
+  .eyebrow {
+    font-family: var(--font-display);
+    font-size: 0.7rem;
+    letter-spacing: 0.32em;
+    text-transform: uppercase;
+    color: hsl(var(--ink-soft));
+  }
+  .eyebrow-red {
+    color: hsl(var(--vermilion));
+  }
+
+  /* Edition-stamp small caps */
+  .smallcaps {
+    font-variant: all-small-caps;
+    letter-spacing: 0.14em;
+  }
+
+  /* Red hanko-style stamp */
+  .hanko {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 3.6rem;
+    height: 3.6rem;
+    border: 2.5px solid hsl(var(--vermilion));
+    color: hsl(var(--vermilion));
+    border-radius: 9999px;
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 0.95rem;
+    line-height: 1;
+    letter-spacing: 0.06em;
+    transform: rotate(-7deg);
+    box-shadow: inset 0 0 0 1px hsl(var(--vermilion) / 0.6);
+    background: radial-gradient(
+      circle at 30% 30%,
+      hsl(var(--vermilion) / 0.0) 0%,
+      hsl(var(--vermilion) / 0.08) 60%,
+      hsl(var(--vermilion) / 0.0) 100%
+    );
+    /* Slight torn-stamp irregularity */
+    filter: contrast(1.05) saturate(1.05);
+  }
+  .hanko::before {
+    content: "";
+    position: absolute;
+    inset: 4px;
+    border: 0.5px dashed hsl(var(--vermilion) / 0.35);
+    border-radius: 9999px;
+    pointer-events: none;
+  }
+
+  /* Indicator ticker chip */
+  .ticker-chip {
+    border-top: 1px solid hsl(var(--rule));
+    border-bottom: 1px solid hsl(var(--rule));
+    padding: 0.55rem 0.85rem;
+  }
+
+  /* Ornaments */
+  .dingbat::before {
+    content: "❖";
+    margin-right: 0.5em;
+    color: hsl(var(--vermilion));
+  }
+  .dingbat-after::after {
+    content: "❖";
+    margin-left: 0.5em;
+    color: hsl(var(--vermilion));
+  }
+
+  /* Headline drop — for big mastheads */
+  .headline {
+    font-family: var(--font-display);
+    font-weight: 800;
+    line-height: 0.92;
+    letter-spacing: -0.025em;
+  }
+
+  /* Press-block button (used by Button override) */
+  .press-block {
+    position: relative;
+    transition: transform 120ms ease-out, box-shadow 120ms ease-out;
+    box-shadow: 3px 3px 0 hsl(var(--ink));
+  }
+  .press-block:hover:not(:disabled) {
+    transform: translate(-1px, -1px);
+    box-shadow: 4px 4px 0 hsl(var(--ink));
+  }
+  .press-block:active:not(:disabled) {
+    transform: translate(2px, 2px);
+    box-shadow: 1px 1px 0 hsl(var(--ink));
+  }
+
+  /* Stagger fade-in helper for page loads */
+  @keyframes broadsheet-rise {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  .rise {
+    animation: broadsheet-rise 480ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+  .rise-d1 {
+    animation-delay: 80ms;
+  }
+  .rise-d2 {
+    animation-delay: 160ms;
+  }
+  .rise-d3 {
+    animation-delay: 240ms;
+  }
+  .rise-d4 {
+    animation-delay: 320ms;
+  }
+  .rise-d5 {
+    animation-delay: 400ms;
+  }
+
+  /* Tabular numerals for data alignment */
+  .tabular {
+    font-variant-numeric: tabular-nums;
   }
 }
