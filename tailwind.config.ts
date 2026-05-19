@@ -47,11 +47,37 @@ const config: Config = {
           DEFAULT: 'hsl(var(--card))',
           foreground: 'hsl(var(--card-foreground))',
         },
+        // ─── Broadsheet semantic palette ──────────────────────────
+        paper: {
+          DEFAULT: 'hsl(var(--paper))',
+          deep: 'hsl(var(--paper-deep))',
+          edge: 'hsl(var(--paper-edge))',
+        },
+        ink: {
+          DEFAULT: 'hsl(var(--ink))',
+          soft: 'hsl(var(--ink-soft))',
+          faint: 'hsl(var(--ink-faint))',
+        },
+        vermilion: {
+          DEFAULT: 'hsl(var(--vermilion))',
+          deep: 'hsl(var(--vermilion-deep))',
+        },
+        gold: 'hsl(var(--gold))',
+        rule: 'hsl(var(--rule))',
       },
       borderRadius: {
         lg: 'var(--radius)',
         md: 'calc(var(--radius) - 2px)',
         sm: 'calc(var(--radius) - 4px)',
+      },
+      fontFamily: {
+        display: ['Shippori Mincho B1', 'Noto Serif JP', 'Hiragino Mincho ProN', 'serif'],
+        serif: ['Noto Serif JP', 'Shippori Mincho B1', 'Hiragino Mincho ProN', 'serif'],
+        mono: ['JetBrains Mono', 'ui-monospace', 'SFMono-Regular', 'monospace'],
+      },
+      letterSpacing: {
+        wider: '0.08em',
+        widest: '0.18em',
       },
     },
   },

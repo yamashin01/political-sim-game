@@ -1,14 +1,16 @@
-import { useMemo, useState } from 'react';
+import { ExplanationBox } from '@/components/common/ExplanationBox';
+import { InfoTooltip } from '@/components/common/InfoTooltip';
+import { Layout } from '@/components/common/Layout';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Layout } from '@/components/common/Layout';
 import { REGISTRY } from '@/data/registry';
 import { evaluatePolicyPassage } from '@/engine/policy';
 import { useGameStore } from '@/stores/gameStore';
 import { useUiStore } from '@/stores/uiStore';
 import type { Policy, PolicyCategory } from '@/types';
+import { useMemo, useState } from 'react';
 
 const CATEGORIES: { id: PolicyCategory; label: string }[] = [
   { id: 'tax_finance', label: '税制財政' },
@@ -61,6 +63,10 @@ export function PolicyScreen() {
   if (results) {
     return (
       <Layout primaryAction={{ label: '予算フェーズへ', onClick: handleProceed }}>
+        <ExplanationBox title="政策の通過結果">
+          提出した政策の通過/否決の判定結果です。通過した政策のみが指標に効果を反映します。否決された政策は今ターンの効果が発生しません。
+        </ExplanationBox>
+
         <Card>
           <CardHeader>
             <CardTitle>政策の通過結果</CardTitle>
@@ -97,6 +103,34 @@ export function PolicyScreen() {
       }}
     >
       <div className="space-y-3">
+        <ExplanationBox title="政策フェーズ">
+          今ターン提出する政策を最大3本まで選びます。党の議席率と他党の協力度合いで通過判定が行われ、通過した政策のみが指標に効果を与えます。重要な政策ほど通過に必要な議席率が高くなります。
+        </ExplanationBox>
+
+        <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+          <span className="inline-flex items-center gap-1">
+            重要度
+            <InfoTooltip
+              label="重要度"
+              content="1〜3。値が大きいほど効果も大きいですが、通過に必要な議席率も高くなります。"
+            />
+          </span>
+          <span className="inline-flex items-center gap-1">
+            通過予想
+            <InfoTooltip
+              label="通過予想"
+              content="現在の議席数と他党の親和性から推定した通過可能性です。確保が必要を上回ると「通過予想」となります。"
+            />
+          </span>
+          <span className="inline-flex items-center gap-1">
+            必要議席率
+            <InfoTooltip
+              label="必要議席率"
+              content="この政策が通過するために必要な賛成議席の割合です。重要度とイデオロギー乖離で変動します。"
+            />
+          </span>
+        </div>
+
         {selected.length > 0 && (
           <Card>
             <CardHeader>
@@ -106,12 +140,7 @@ export function PolicyScreen() {
               {selected.map((id) => {
                 const policy = REGISTRY.policies[id];
                 return (
-                  <Button
-                    key={id}
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => unselect(id)}
-                  >
+                  <Button key={id} variant="secondary" size="sm" onClick={() => unselect(id)}>
                     {policy?.name ?? id} ×
                   </Button>
                 );
@@ -150,7 +179,7 @@ export function PolicyScreen() {
                   >
                     <div className="flex justify-between items-baseline gap-2">
                       <div className="font-semibold">{p.name}</div>
-                      <div className="flex gap-1">
+                      <div className="flex gap-1 items-center">
                         <Badge variant="outline">重要度{p.importance}</Badge>
                         <Badge variant={willPass ? 'default' : 'destructive'}>
                           {willPass ? '通過予想' : '否決予想'}

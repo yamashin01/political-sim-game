@@ -1,7 +1,9 @@
+import { ExplanationBox } from '@/components/common/ExplanationBox';
+import { InfoTooltip } from '@/components/common/InfoTooltip';
+import { Layout } from '@/components/common/Layout';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Layout } from '@/components/common/Layout';
 import { REGISTRY } from '@/data/registry';
 import { rollEventsForTurn } from '@/engine/event';
 import { useGameStore } from '@/stores/gameStore';
@@ -32,7 +34,10 @@ export function ElectionResultScreen() {
       setScreen('coalition');
       return;
     }
-    if (coalition.length === 1 && (state.parties.find((p) => p.id === coalition[0])?.seats ?? 0) >= majority) {
+    if (
+      coalition.length === 1 &&
+      (state.parties.find((p) => p.id === coalition[0])?.seats ?? 0) >= majority
+    ) {
       // 単独過半数: 次ターンへ進む
       proceedToNextTurn();
       return;
@@ -58,14 +63,24 @@ export function ElectionResultScreen() {
 
   return (
     <Layout primaryAction={{ label: '次へ', onClick: handleNext }}>
+      <ExplanationBox title="選挙結果">
+        衆議院議員総選挙の結果です。獲得議席は次ターン以降の政策通過力に直結します。過半数 (
+        {majority}議席)
+        を獲得できた党は単独政権を、できなかった場合は連立交渉に進みます。議席増減は支持率や経済などの指標から導かれます。
+      </ExplanationBox>
+
       <Card>
         <CardHeader>
           <CardTitle>選挙結果 — 衆議院議員総選挙</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="text-sm">
+          <div className="text-sm inline-flex items-center gap-1">
             過半数ライン: <span className="font-mono">{majority}</span> / 定数{' '}
             <span className="font-mono">{houseTotal}</span>
+            <InfoTooltip
+              label="過半数"
+              content="衆議院定数の半数+1 (= 233議席) が過半数の目安です。単独過半数を取れば単独政権を組めます。"
+            />
           </div>
 
           <div className="space-y-2">
@@ -81,7 +96,11 @@ export function ElectionResultScreen() {
                     <div className="flex justify-between text-sm items-baseline">
                       <span className={p.isPlayer ? 'font-semibold' : ''}>
                         {p.name}
-                        {p.isPlayer && <Badge variant="secondary" className="ml-2">あなた</Badge>}
+                        {p.isPlayer && (
+                          <Badge variant="secondary" className="ml-2">
+                            あなた
+                          </Badge>
+                        )}
                       </span>
                       <span className="font-mono">
                         {seats} 議席
