@@ -1,11 +1,12 @@
-import { useEffect, useState } from 'react';
+import { ExplanationBox } from '@/components/common/ExplanationBox';
+import { Layout } from '@/components/common/Layout';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Layout } from '@/components/common/Layout';
 import { REGISTRY } from '@/data/registry';
 import { useGameStore } from '@/stores/gameStore';
 import { useUiStore } from '@/stores/uiStore';
+import { useEffect, useState } from 'react';
 
 export function EventScreen() {
   const resolveEvent = useGameStore((s) => s.resolveEvent);
@@ -63,6 +64,10 @@ export function EventScreen() {
         disabled: !!hasChoices && !selectedChoice,
       }}
     >
+      <ExplanationBox title="イベントフェーズ">
+        今ターン発生したイベントへの対応を選びます。各選択肢には即時効果があり、ものによっては次ターン以降の連鎖イベントを引き起こします。選んだ対応は支持率や外交安保などの指標に影響します。
+      </ExplanationBox>
+
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2 mb-2">

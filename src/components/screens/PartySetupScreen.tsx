@@ -1,12 +1,14 @@
-import { useState } from 'react';
+import { ExplanationBox } from '@/components/common/ExplanationBox';
+import { InfoTooltip } from '@/components/common/InfoTooltip';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { NPC_PARTIES } from '@/data/parties';
 import { useGameStore } from '@/stores/gameStore';
 import { useUiStore } from '@/stores/uiStore';
-import { NPC_PARTIES } from '@/data/parties';
 import type { Ideology } from '@/types';
+import { useState } from 'react';
 
 const NPC_NAMES = NPC_PARTIES.map((p) => p.name);
 
@@ -16,18 +18,21 @@ const AXES = [
     label: '経済軸',
     negative: '小さな政府',
     positive: '大きな政府',
+    tooltip: '-2 (小さな政府) 〜 +2 (大きな政府)。財政・経済政策の親和性に影響します。',
   },
   {
     key: 'social' as const,
     label: '社会軸',
     negative: '保守',
     positive: 'リベラル',
+    tooltip: '-2 (保守) 〜 +2 (リベラル)。社会保障や教育政策の親和性に影響します。',
   },
   {
     key: 'diplomatic' as const,
     label: '外交軸',
     negative: '同盟重視',
     positive: '自主路線',
+    tooltip: '-2 (同盟重視) 〜 +2 (自主路線)。外交安保政策の親和性に影響します。',
   },
 ];
 
@@ -68,6 +73,10 @@ export function PartySetupScreen() {
           <CardTitle>党設定</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
+          <ExplanationBox title="党設定">
+            あなたが率いる党の党名とイデオロギーを設定します。経済・社会・外交の3つの軸で立ち位置を決めると、ゲーム中の連立交渉や政策通過の判定に影響します。設定はゲーム開始後は変更できません。
+          </ExplanationBox>
+
           <div className="space-y-2">
             <Label htmlFor="partyName">党名</Label>
             <Input
@@ -84,7 +93,10 @@ export function PartySetupScreen() {
             {AXES.map((axis) => (
               <div key={axis.key} className="space-y-1">
                 <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>{axis.label}</span>
+                  <span className="inline-flex items-center gap-1">
+                    {axis.label}
+                    <InfoTooltip label={axis.label} content={axis.tooltip} />
+                  </span>
                   <span className="font-mono">
                     {ideology[axis.key] > 0 ? `+${ideology[axis.key]}` : ideology[axis.key]}
                   </span>
@@ -147,5 +159,5 @@ function describePosition(i: Ideology): string {
   if (i.diplomatic <= -1) parts.push('同盟重視');
   else if (i.diplomatic >= 1) parts.push('自主路線');
 
-  return parts.join('・') + '寄り';
+  return `${parts.join('・')}寄り`;
 }

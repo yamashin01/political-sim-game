@@ -1,11 +1,13 @@
-import { useMemo, useState } from 'react';
+import { ExplanationBox } from '@/components/common/ExplanationBox';
+import { InfoTooltip } from '@/components/common/InfoTooltip';
+import { Layout } from '@/components/common/Layout';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Slider } from '@/components/ui/slider';
-import { Button } from '@/components/ui/button';
-import { Layout } from '@/components/common/Layout';
 import { useGameStore } from '@/stores/gameStore';
 import { useUiStore } from '@/stores/uiStore';
 import type { IndicatorChanges } from '@/types';
+import { useMemo, useState } from 'react';
 
 interface BudgetCategory {
   key: string;
@@ -20,7 +22,12 @@ const CATEGORIES: BudgetCategory[] = [
   { key: 'economyIndustry', label: '経済産業', effect: 'economy', perTrillionYen: 0.12 },
   { key: 'welfare', label: '社会保障', effect: 'approval', perTrillionYen: 0.08 },
   { key: 'educationScience', label: '教育科技', effect: 'economy', perTrillionYen: 0.06 },
-  { key: 'environmentEnergy', label: '環境エネルギー', effect: 'environment', perTrillionYen: 0.15 },
+  {
+    key: 'environmentEnergy',
+    label: '環境エネルギー',
+    effect: 'environment',
+    perTrillionYen: 0.15,
+  },
   { key: 'diplomacyDefense', label: '外交防衛', effect: 'diplomacy', perTrillionYen: 0.13 },
 ];
 
@@ -100,26 +107,38 @@ export function BudgetScreen() {
           : '補正予算は任意'
       }
       primaryAction={{
-        label: isFirstHalf
-          ? '提出'
-          : submitSupplementary
-            ? '補正予算を組む'
-            : '組まずに進む',
+        label: isFirstHalf ? '提出' : submitSupplementary ? '補正予算を組む' : '組まずに進む',
         onClick: handleSubmit,
         disabled: !canSubmit,
       }}
     >
+      <ExplanationBox title="予算フェーズ">
+        6つの分野に予算を割り振ります。前半ターンは本予算、後半ターンは任意で補正予算を編成できます。歳入を超える分は赤字となり財政指標が低下しますが、許容赤字の範囲内であれば他指標を伸ばすことができます。
+      </ExplanationBox>
+
       <Card>
         <CardHeader>
-          <CardTitle>
+          <CardTitle className="inline-flex items-center gap-1">
             {isFirstHalf ? '本予算編成' : '補正予算 (任意)'}
+            <InfoTooltip
+              label={isFirstHalf ? '本予算' : '補正予算'}
+              content={
+                isFirstHalf
+                  ? '前半ターンに必ず編成する年度の基本支出計画です。歳入を超える分は赤字となり財政が下がります。'
+                  : '後半ターンに任意で組める追加予算です。短期的な支持率や経済の押し上げに使えますが、財政は下がります。'
+              }
+            />
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           {isFirstHalf ? (
             <>
-              <div className="text-sm text-muted-foreground">
+              <div className="text-sm text-muted-foreground inline-flex items-center gap-1">
                 各分野に予算を配分してください (単位: 兆円)。許容赤字を超えると提出できません。
+                <InfoTooltip
+                  label="許容赤字"
+                  content="財政指標を大きく損なわずに済む赤字の上限です。この範囲内であれば、他指標を伸ばすために赤字財政も選択できます。"
+                />
               </div>
               {CATEGORIES.map((c) => (
                 <div key={c.key} className="space-y-1">
@@ -132,9 +151,7 @@ export function BudgetScreen() {
                     min={0}
                     max={50}
                     step={1}
-                    onValueChange={(v) =>
-                      setAllocations((s) => ({ ...s, [c.key]: v[0] ?? 0 }))
-                    }
+                    onValueChange={(v) => setAllocations((s) => ({ ...s, [c.key]: v[0] ?? 0 }))}
                   />
                 </div>
               ))}

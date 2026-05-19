@@ -1,7 +1,9 @@
+import { ExplanationBox } from '@/components/common/ExplanationBox';
+import { InfoTooltip } from '@/components/common/InfoTooltip';
+import { Layout } from '@/components/common/Layout';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Layout } from '@/components/common/Layout';
 import { REGISTRY } from '@/data/registry';
 import { rollEventsForTurn } from '@/engine/event';
 import { useGameStore } from '@/stores/gameStore';
@@ -99,20 +101,37 @@ export function DashboardScreen() {
       }}
     >
       <div className="space-y-4">
+        <ExplanationBox title="メインダッシュボード">
+          今ターンの状況を確認し、各フェーズを順に進めます。1ターンは「イベント → 政策 → 予算 →
+          党運営」の4フェーズで構成されています。指標やトレンドの推移を見ながら、次にどのフェーズへ進むかを判断してください。
+        </ExplanationBox>
+
         <Card>
           <CardHeader>
             <CardTitle>党の内部状態</CardTitle>
           </CardHeader>
           <CardContent className="grid sm:grid-cols-2 gap-4 text-sm">
             <div className="space-y-1">
-              <div className="text-muted-foreground">党結束度</div>
+              <div className="text-muted-foreground inline-flex items-center gap-1">
+                党結束度
+                <InfoTooltip
+                  label="党結束度"
+                  content="党内の意見の一致度を示す指標 (0-100)。低下しすぎると党分裂のリスクが高まります。"
+                />
+              </div>
               <div className="flex items-center gap-2">
                 <Progress value={player.unity ?? 0} className="flex-1" />
                 <span className="font-mono w-10 text-right">{Math.round(player.unity ?? 0)}</span>
               </div>
             </div>
             <div className="space-y-1">
-              <div className="text-muted-foreground">連立健全度</div>
+              <div className="text-muted-foreground inline-flex items-center gap-1">
+                連立健全度
+                <InfoTooltip
+                  label="連立健全度"
+                  content="連立与党時のみ表示される指標 (0-100)。低下しすぎると連立崩壊のリスクが高まります。"
+                />
+              </div>
               <div className="flex items-center gap-2">
                 {state.coalitionPartyIds.includes(state.playerPartyId) ? (
                   <>
@@ -131,7 +150,13 @@ export function DashboardScreen() {
 
         <Card>
           <CardHeader>
-            <CardTitle>トレンドの進行</CardTitle>
+            <CardTitle className="inline-flex items-center gap-1">
+              トレンドの進行
+              <InfoTooltip
+                label="トレンド"
+                content="中長期で進行する社会課題。進行度が100に達すると大きな影響イベントが発生します。"
+              />
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-2 text-sm">
             {state.trends.map((ts) => {
