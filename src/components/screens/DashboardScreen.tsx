@@ -2,7 +2,6 @@ import { ExplanationBox } from '@/components/common/ExplanationBox';
 import { InfoTooltip } from '@/components/common/InfoTooltip';
 import { Layout } from '@/components/common/Layout';
 import { REGISTRY } from '@/data/registry';
-import { rollEventsForTurn } from '@/engine/event';
 import { useGameStore } from '@/stores/gameStore';
 import { useUiStore } from '@/stores/uiStore';
 import type { ReactNode } from 'react';
@@ -23,13 +22,9 @@ const PHASE_NUMERAL: Record<(typeof PHASE_ORDER)[number], string> = {
 
 export function DashboardScreen() {
   const state = useGameStore((s) => s.state);
-  const triggerElection = useGameStore((s) => s.triggerElection);
-  const rollOpposition = useGameStore((s) => s.rollOppositionElection);
-  const advance = useGameStore((s) => s.advanceToNextTurn);
   const applyTurn = useGameStore((s) => s.applyTurnIndicators);
   const setScreen = useUiStore((s) => s.setScreen);
   const setPhase = useUiStore((s) => s.setPhase);
-  const enqueueEvents = useUiStore((s) => s.enqueueEvents);
   const currentPhase = useUiStore((s) => s.currentPhase);
   const queue = useUiStore((s) => s.pendingEventQueue);
 
@@ -58,24 +53,10 @@ export function DashboardScreen() {
         setPhase('wrap_up');
         return;
       case 'wrap_up': {
+        // 当ターンの指標を反映してからサマリ画面へ。
+        // 選挙発動判定・次ターン遷移は TurnSummaryScreen の「次号へ」が担当する。
         applyTurn();
-        const shouldElection = rollOpposition();
-        if (shouldElection) {
-          triggerElection();
-          setScreen('election_result');
-          return;
-        }
-        const { ended } = advance();
-        if (ended) {
-          setScreen('ending');
-          return;
-        }
-        const nextState = useGameStore.getState().state;
-        if (nextState) {
-          const events = rollEventsForTurn(nextState, REGISTRY);
-          enqueueEvents(events);
-        }
-        setPhase('event');
+        setScreen('turn_summary');
         return;
       }
     }

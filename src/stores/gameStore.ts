@@ -1,25 +1,12 @@
-import { create } from 'zustand';
-import { immer } from 'zustand/middleware/immer';
-import type {
-  ElectionResult,
-  GameConfig,
-  GameEvent,
-  GameState,
-  Ideology,
-  IndicatorChanges,
-  Policy,
-  PolicyId,
-  TurnHistory,
-} from '@/types';
 import { REGISTRY } from '@/data/registry';
 import { standardScenario } from '@/data/scenarios/standard';
 import { formCoalition } from '@/engine/coalition';
 import { calculateElection, oppositionElectionProbability } from '@/engine/election';
 import { checkSpecialEnd } from '@/engine/end-conditions';
 import { rollEventsForTurn } from '@/engine/event';
+import { ideologyDeviation } from '@/engine/ideology';
 import { applyChanges, clamp, combineChanges } from '@/engine/indicators';
 import { evaluatePolicyPassage, unityDelta } from '@/engine/policy';
-import { ideologyDeviation } from '@/engine/ideology';
 import { calculateFinalScore } from '@/engine/score';
 import {
   applySeatDistribution,
@@ -27,6 +14,22 @@ import {
   processTrends,
   recordTurnHistory,
 } from '@/engine/turn';
+import type {
+  ElectionResult,
+  GameConfig,
+  GameEvent,
+  GameState,
+  Ideology,
+  IndicatorChanges,
+  NationalIndicators,
+  PartyId,
+  Policy,
+  PolicyId,
+  TrendState,
+  TurnHistory,
+} from '@/types';
+import { create } from 'zustand';
+import { immer } from 'zustand/middleware/immer';
 
 const DEFAULT_CONFIG: GameConfig = {
   scenario: 'standard',
@@ -51,6 +54,12 @@ interface GameStoreState {
   turnResults: { policyId: PolicyId; passed: boolean }[];
   /** 当ターンで発生したイベントの履歴 (UI表示用) */
   turnEvents: { eventId: string; choiceId?: string }[];
+  /** ターン開始時 (指標更新前) の指標スナップショット。サマリ画面の差分表示用 */
+  turnStartIndicators: NationalIndicators | null;
+  /** ターン開始時の議席スナップショット */
+  turnStartSeats: Record<PartyId, number> | null;
+  /** ターン開始時のトレンド進行度スナップショット */
+  turnStartTrends: TrendState[] | null;
 
   startNewGame: (partyName: string, ideology: Ideology) => string[];
   proposePolicies: (policyIds: PolicyId[]) => { policyId: PolicyId; passed: boolean }[];
@@ -66,6 +75,12 @@ interface GameStoreState {
   resetGame: () => void;
 }
 
+function snapshotSeats(state: GameState): Record<PartyId, number> {
+  const seats: Record<PartyId, number> = {};
+  for (const p of state.parties) seats[p.id] = p.seats;
+  return seats;
+}
+
 export const useGameStore = create<GameStoreState>()(
   immer((set, get) => ({
     state: null,
@@ -73,6 +88,9 @@ export const useGameStore = create<GameStoreState>()(
     pendingChanges: {},
     turnResults: [],
     turnEvents: [],
+    turnStartIndicators: null,
+    turnStartSeats: null,
+    turnStartTrends: null,
 
     startNewGame: (partyName, ideology) => {
       const initial = standardScenario.createInitialState(DEFAULT_CONFIG);
@@ -89,6 +107,9 @@ export const useGameStore = create<GameStoreState>()(
         draft.pendingChanges = {};
         draft.turnResults = [];
         draft.turnEvents = [];
+        draft.turnStartIndicators = { ...initial.indicators };
+        draft.turnStartSeats = snapshotSeats(initial);
+        draft.turnStartTrends = initial.trends.map((t) => ({ ...t }));
       });
       // 初回ターンのイベント発生判定
       const eventIds = rollEventsForTurn(initial, REGISTRY);
@@ -141,7 +162,7 @@ export const useGameStore = create<GameStoreState>()(
           });
         }
         // 結束度更新
-        const player = draft.state.parties.find((p) => p.id === draft.state!.playerPartyId);
+        const player = draft.state.parties.find((p) => p.id === draft.state?.playerPartyId);
         if (player) {
           player.unity = clamp((player.unity ?? 0) + unityChange);
         }
@@ -267,6 +288,12 @@ export const useGameStore = create<GameStoreState>()(
         draft.turnEvents = [];
         draft.selectedPolicyIds = [];
         draft.pendingChanges = {};
+        // 次ターン開始時点のスナップショットを保存 (サマリ画面の差分表示用)
+        if (!ended) {
+          draft.turnStartIndicators = { ...draft.state.indicators };
+          draft.turnStartSeats = snapshotSeats(draft.state);
+          draft.turnStartTrends = draft.state.trends.map((t) => ({ ...t }));
+        }
       });
 
       return { ended };
@@ -279,6 +306,9 @@ export const useGameStore = create<GameStoreState>()(
         draft.pendingChanges = {};
         draft.turnResults = [];
         draft.turnEvents = [];
+        draft.turnStartIndicators = null;
+        draft.turnStartSeats = null;
+        draft.turnStartTrends = null;
       }),
   })),
 );
