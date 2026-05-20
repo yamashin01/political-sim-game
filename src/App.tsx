@@ -1,15 +1,16 @@
-import { useUiStore } from './stores/uiStore';
-import { TitleScreen } from './components/screens/TitleScreen';
-import { PartySetupScreen } from './components/screens/PartySetupScreen';
-import { DashboardScreen } from './components/screens/DashboardScreen';
-import { EventScreen } from './components/screens/EventScreen';
-import { PolicyScreen } from './components/screens/PolicyScreen';
 import { BudgetScreen } from './components/screens/BudgetScreen';
-import { ElectionResultScreen } from './components/screens/ElectionResultScreen';
 import { CoalitionScreen } from './components/screens/CoalitionScreen';
+import { DashboardScreen } from './components/screens/DashboardScreen';
+import { ElectionResultScreen } from './components/screens/ElectionResultScreen';
 import { EndingScreen } from './components/screens/EndingScreen';
+import { EventScreen } from './components/screens/EventScreen';
 import { HelpScreen } from './components/screens/HelpScreen';
 import { PartyInfoScreen } from './components/screens/PartyInfoScreen';
+import { PartySetupScreen } from './components/screens/PartySetupScreen';
+import { PolicyScreen } from './components/screens/PolicyScreen';
+import { TitleScreen } from './components/screens/TitleScreen';
+import { TurnSummaryScreen } from './components/screens/TurnSummaryScreen';
+import { useUiStore } from './stores/uiStore';
 
 export function App() {
   const currentScreen = useUiStore((s) => s.currentScreen);
@@ -27,6 +28,8 @@ export function App() {
       return <PolicyScreen />;
     case 'budget':
       return <BudgetScreen />;
+    case 'turn_summary':
+      return <TurnSummaryScreen />;
     case 'election_result':
       return <ElectionResultScreen />;
     case 'coalition':

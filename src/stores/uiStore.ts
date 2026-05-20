@@ -7,6 +7,7 @@ export type ScreenId =
   | 'event'
   | 'policy'
   | 'budget'
+  | 'turn_summary'
   | 'election_result'
   | 'coalition'
   | 'ending'
@@ -37,8 +38,7 @@ export const useUiStore = create<UiState>((set, get) => ({
   pendingEventQueue: [],
   resolvingEventId: null,
 
-  setScreen: (s) =>
-    set((state) => ({ previousScreen: state.currentScreen, currentScreen: s })),
+  setScreen: (s) => set((state) => ({ previousScreen: state.currentScreen, currentScreen: s })),
   goBack: () =>
     set((state) => ({
       currentScreen: state.previousScreen ?? 'title',
