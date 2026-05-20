@@ -12,6 +12,7 @@ import { useEffect, useState } from 'react';
 
 export function ElectionResultScreen() {
   const state = useGameStore((s) => s.state);
+  const turnStartSeats = useGameStore((s) => s.turnStartSeats);
   const advance = useGameStore((s) => s.advanceToNextTurn);
   const setScreen = useUiStore((s) => s.setScreen);
   const setPhase = useUiStore((s) => s.setPhase);
@@ -19,7 +20,6 @@ export function ElectionResultScreen() {
 
   if (!state) return null;
 
-  const lastElection = state.history.elections[state.history.elections.length - 1];
   const majority = state.config.majorityThreshold;
   const houseTotal = state.config.houseTotalSeats;
 
@@ -95,7 +95,9 @@ export function ElectionResultScreen() {
               })
               .map((p, idx) => {
                 const seats = p.seats;
-                const previous = lastElection?.seatsPerParty[p.id] ?? 0;
+                // turnStartSeats は当ターン開始時 (= 選挙前) のスナップショット。
+                // triggerElection 後の history.elections.last は新議席と同値のため使えない。
+                const previous = turnStartSeats?.[p.id] ?? 0;
                 return (
                   <PartySeatRow
                     key={p.id}
