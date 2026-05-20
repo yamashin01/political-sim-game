@@ -25,6 +25,7 @@ import type {
   PartyId,
   Policy,
   PolicyId,
+  TrendId,
   TrendState,
   TurnHistory,
 } from '@/types';
@@ -60,6 +61,10 @@ interface GameStoreState {
   turnStartSeats: Record<PartyId, number> | null;
   /** ターン開始時のトレンド進行度スナップショット */
   turnStartTrends: TrendState[] | null;
+  /** 直近で完了したターンの指標変化量 (Dashboard ティッカーのデルタ表示用) */
+  lastCompletedTurnDelta: IndicatorChanges | null;
+  /** 直近で完了したターンのトレンド進行差分 */
+  lastCompletedTurnTrendDeltas: Record<TrendId, number> | null;
 
   startNewGame: (partyName: string, ideology: Ideology) => string[];
   proposePolicies: (policyIds: PolicyId[]) => { policyId: PolicyId; passed: boolean }[];
@@ -81,6 +86,28 @@ function snapshotSeats(state: GameState): Record<PartyId, number> {
   return seats;
 }
 
+function computeIndicatorDelta(
+  before: NationalIndicators,
+  after: NationalIndicators,
+): IndicatorChanges {
+  return {
+    approval: after.approval - before.approval,
+    economy: after.economy - before.economy,
+    finance: after.finance - before.finance,
+    diplomacy: after.diplomacy - before.diplomacy,
+    environment: after.environment - before.environment,
+  };
+}
+
+function computeTrendDeltas(before: TrendState[], after: TrendState[]): Record<TrendId, number> {
+  const beforeMap = new Map(before.map((t) => [t.trendId, t.progress]));
+  const out: Record<TrendId, number> = {};
+  for (const t of after) {
+    out[t.trendId] = t.progress - (beforeMap.get(t.trendId) ?? t.progress);
+  }
+  return out;
+}
+
 export const useGameStore = create<GameStoreState>()(
   immer((set, get) => ({
     state: null,
@@ -91,6 +118,8 @@ export const useGameStore = create<GameStoreState>()(
     turnStartIndicators: null,
     turnStartSeats: null,
     turnStartTrends: null,
+    lastCompletedTurnDelta: null,
+    lastCompletedTurnTrendDeltas: null,
 
     startNewGame: (partyName, ideology) => {
       const initial = standardScenario.createInitialState(DEFAULT_CONFIG);
@@ -110,6 +139,8 @@ export const useGameStore = create<GameStoreState>()(
         draft.turnStartIndicators = { ...initial.indicators };
         draft.turnStartSeats = snapshotSeats(initial);
         draft.turnStartTrends = initial.trends.map((t) => ({ ...t }));
+        draft.lastCompletedTurnDelta = null;
+        draft.lastCompletedTurnTrendDeltas = null;
       });
       // 初回ターンのイベント発生判定
       const eventIds = rollEventsForTurn(initial, REGISTRY);
@@ -270,6 +301,16 @@ export const useGameStore = create<GameStoreState>()(
       const isFinalTurn = current.currentTurn >= current.config.totalTurns;
       const ended = !!endReason || isFinalTurn;
 
+      // 直近完了ターンの差分を計算 (Dashboard ティッカー用)
+      const startIndicators = get().turnStartIndicators;
+      const startTrends = get().turnStartTrends;
+      const completedDelta = startIndicators
+        ? computeIndicatorDelta(startIndicators, current.indicators)
+        : null;
+      const completedTrendDeltas = startTrends
+        ? computeTrendDeltas(startTrends, current.trends)
+        : null;
+
       set((draft) => {
         if (!draft.state) return;
         // 履歴記録
@@ -288,6 +329,9 @@ export const useGameStore = create<GameStoreState>()(
         draft.turnEvents = [];
         draft.selectedPolicyIds = [];
         draft.pendingChanges = {};
+        // 完了ターン分の差分を保存 (Dashboard / Layout ティッカーで参照)
+        draft.lastCompletedTurnDelta = completedDelta;
+        draft.lastCompletedTurnTrendDeltas = completedTrendDeltas;
         // 次ターン開始時点のスナップショットを保存 (サマリ画面の差分表示用)
         if (!ended) {
           draft.turnStartIndicators = { ...draft.state.indicators };
@@ -309,6 +353,8 @@ export const useGameStore = create<GameStoreState>()(
         draft.turnStartIndicators = null;
         draft.turnStartSeats = null;
         draft.turnStartTrends = null;
+        draft.lastCompletedTurnDelta = null;
+        draft.lastCompletedTurnTrendDeltas = null;
       }),
   })),
 );

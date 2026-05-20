@@ -1,10 +1,12 @@
 import { ExplanationBox } from '@/components/common/ExplanationBox';
+import { IndicatorDelta } from '@/components/common/IndicatorDelta';
 import { InfoTooltip } from '@/components/common/InfoTooltip';
 import { Layout } from '@/components/common/Layout';
 import { REGISTRY } from '@/data/registry';
 import { useGameStore } from '@/stores/gameStore';
 import { useUiStore } from '@/stores/uiStore';
 import type { ReactNode } from 'react';
+import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
 const PHASE_ORDER = ['event', 'policy', 'budget', 'wrap_up'] as const;
 const PHASE_LABELS: Record<(typeof PHASE_ORDER)[number], string> = {
@@ -22,6 +24,7 @@ const PHASE_NUMERAL: Record<(typeof PHASE_ORDER)[number], string> = {
 
 export function DashboardScreen() {
   const state = useGameStore((s) => s.state);
+  const lastTrendDeltas = useGameStore((s) => s.lastCompletedTurnTrendDeltas);
   const applyTurn = useGameStore((s) => s.applyTurnIndicators);
   const setScreen = useUiStore((s) => s.setScreen);
   const setPhase = useUiStore((s) => s.setPhase);
@@ -193,10 +196,11 @@ export function DashboardScreen() {
               const trend = REGISTRY.trends[ts.trendId];
               if (!trend) return null;
               const v = Math.round(ts.progress);
+              const trendDelta = lastTrendDeltas?.[ts.trendId];
               return (
                 <li
                   key={ts.trendId}
-                  className="grid grid-cols-[2rem_8rem_1fr_3.5rem] items-center gap-3 border-b border-dashed border-ink/40 pb-2"
+                  className="grid grid-cols-[2rem_8rem_1fr_3.5rem_3.5rem] items-center gap-3 border-b border-dashed border-ink/40 pb-2"
                 >
                   <span className="font-display font-bold text-vermilion text-xs tabular">
                     №{String(idx + 1).padStart(2, '0')}
@@ -216,6 +220,9 @@ export function DashboardScreen() {
                     {v}
                     <span className="text-ink-faint text-xs">/100</span>
                   </span>
+                  <span className="text-right">
+                    <IndicatorDelta delta={trendDelta} inverted decimal />
+                  </span>
                 </li>
               );
             })}
@@ -224,6 +231,19 @@ export function DashboardScreen() {
 
         {/* RIGHT COLUMN: party internals */}
         <aside className="lg:border-l lg:border-ink/40 lg:pl-6 space-y-6">
+          <section>
+            <header className="flex items-baseline gap-3 border-b border-ink pb-1 mb-3">
+              <span className="font-display font-bold text-vermilion text-xs tabular tracking-widest">
+                【 推 移 】
+              </span>
+              <h2 className="font-display font-bold text-base">支持率の推移</h2>
+              <span className="ml-auto font-serif-jp italic text-[11px] text-ink-soft">
+                — 直近最大6ターン
+              </span>
+            </header>
+            <ApprovalTrendChart history={state.history.turns} />
+          </section>
+
           <section>
             <header className="flex items-baseline gap-3 border-b border-ink pb-1 mb-3">
               <span className="font-display font-bold text-vermilion text-xs tabular tracking-widest">
@@ -336,6 +356,66 @@ function MetricRow({ label, tooltip, value, emptyLabel }: MetricRowProps) {
           />
         </div>
       )}
+    </div>
+  );
+}
+
+interface ApprovalTrendChartProps {
+  history: { turn: number; indicatorsAtEnd: { approval: number } }[];
+}
+
+function ApprovalTrendChart({ history }: ApprovalTrendChartProps) {
+  if (history.length === 0) {
+    return (
+      <p className="font-serif-jp text-sm text-ink-faint italic px-2 py-6 text-center">
+        — 記録なし (1ターン完了後に表示されます)
+      </p>
+    );
+  }
+  const data = history.slice(-6).map((t) => ({
+    turn: t.turn,
+    approval: Math.round(t.indicatorsAtEnd.approval),
+  }));
+  return (
+    <div className="h-32 w-full min-w-0">
+      <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+        <LineChart data={data} margin={{ top: 6, right: 8, bottom: 0, left: -20 }}>
+          <XAxis
+            dataKey="turn"
+            tick={{ fontSize: 10, fill: 'hsl(var(--ink-soft))', fontFamily: 'var(--font-mono)' }}
+            tickLine={false}
+            axisLine={{ stroke: 'hsl(var(--ink) / 0.4)' }}
+          />
+          <YAxis
+            domain={[0, 100]}
+            ticks={[0, 50, 100]}
+            tick={{ fontSize: 10, fill: 'hsl(var(--ink-soft))', fontFamily: 'var(--font-mono)' }}
+            tickLine={false}
+            axisLine={{ stroke: 'hsl(var(--ink) / 0.4)' }}
+            width={28}
+          />
+          <Tooltip
+            contentStyle={{
+              backgroundColor: 'hsl(var(--paper))',
+              border: '1px solid hsl(var(--ink))',
+              borderRadius: 0,
+              fontFamily: 'var(--font-mono)',
+              fontSize: 11,
+            }}
+            labelFormatter={(v) => `第${v}号`}
+            formatter={(v) => [`${v}`, '支持率']}
+          />
+          <Line
+            type="monotone"
+            dataKey="approval"
+            stroke="hsl(var(--vermilion))"
+            strokeWidth={1.5}
+            dot={{ r: 2.5, fill: 'hsl(var(--vermilion))' }}
+            activeDot={{ r: 4 }}
+            isAnimationActive={false}
+          />
+        </LineChart>
+      </ResponsiveContainer>
     </div>
   );
 }

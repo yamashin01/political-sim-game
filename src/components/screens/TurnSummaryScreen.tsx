@@ -1,4 +1,5 @@
 import { ExplanationBox } from '@/components/common/ExplanationBox';
+import { IndicatorDelta } from '@/components/common/IndicatorDelta';
 import { Layout } from '@/components/common/Layout';
 import { REGISTRY } from '@/data/registry';
 import { oppositionElectionProbability } from '@/engine/election';
@@ -143,7 +144,7 @@ export function TurnSummaryScreen() {
                     <span className="font-mono tabular font-bold text-right text-base">
                       {after}
                     </span>
-                    <DeltaBadge delta={delta} />
+                    <IndicatorDelta delta={delta} />
                   </li>
                 );
               })}
@@ -290,7 +291,7 @@ export function TurnSummaryScreen() {
                       />
                     </div>
                     <div className="mt-1 text-right">
-                      <DeltaBadge delta={delta} inverted />
+                      <IndicatorDelta delta={delta} inverted />
                     </div>
                   </li>
                 );
@@ -353,32 +354,6 @@ export function TurnSummaryScreen() {
         <span>次号は「次号へ」より発刊</span>
       </div>
     </Layout>
-  );
-}
-
-interface DeltaBadgeProps {
-  delta: number;
-  /** トレンド向け: 増加が「悪い」場合に色を反転 */
-  inverted?: boolean;
-}
-
-function DeltaBadge({ delta, inverted }: DeltaBadgeProps) {
-  if (delta === 0) {
-    return <span className="font-mono tabular text-xs text-ink-faint">─ 0</span>;
-  }
-  const isPositive = delta > 0;
-  // 通常の指標: 上昇=良い(墨色), 下降=悪い(朱)
-  // トレンド: 上昇=悪化(朱), 下降=改善(墨)
-  const isBad = inverted ? isPositive : !isPositive;
-  const arrow = isPositive ? '▲' : '▼';
-  const sign = isPositive ? '+' : '';
-  return (
-    <span
-      className={`font-mono tabular text-xs font-bold ${isBad ? 'text-vermilion' : 'text-ink'}`}
-    >
-      {arrow} {sign}
-      {delta}
-    </span>
   );
 }
 

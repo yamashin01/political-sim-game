@@ -1,7 +1,10 @@
+import { IndicatorDelta } from '@/components/common/IndicatorDelta';
+import { MiniSparkline } from '@/components/common/MiniSparkline';
 import { Button } from '@/components/ui/button';
 import { turnLabel } from '@/engine/turn';
 import { useGameStore } from '@/stores/gameStore';
 import { useUiStore } from '@/stores/uiStore';
+import type { GameState, NationalIndicators } from '@/types';
 import type { ReactNode } from 'react';
 
 interface LayoutProps {
@@ -14,6 +17,7 @@ interface LayoutProps {
 
 export function Layout({ children, primaryAction, hint }: LayoutProps) {
   const state = useGameStore((s) => s.state);
+  const lastDelta = useGameStore((s) => s.lastCompletedTurnDelta);
   const setScreen = useUiStore((s) => s.setScreen);
   if (!state) return <>{children}</>;
 
@@ -81,14 +85,40 @@ export function Layout({ children, primaryAction, hint }: LayoutProps) {
             </div>
           </div>
 
-          {/* ═════ INDICATOR TICKER (5 metrics) ═════════════════════ */}
+          {/* ═════ INDICATOR TICKER (5 metrics + delta + sparkline) ═════════ */}
           <div className="rule-double pt-2 pb-3">
             <div className="grid grid-cols-5 gap-0 border border-ink/70 bg-paper">
-              <IndicatorCell label="支持率" value={state.indicators.approval} />
-              <IndicatorCell label="経済" value={state.indicators.economy} />
-              <IndicatorCell label="財政" value={state.indicators.finance} />
-              <IndicatorCell label="外交安保" value={state.indicators.diplomacy} />
-              <IndicatorCell label="環境" value={state.indicators.environment} last />
+              <IndicatorCell
+                label="支持率"
+                indicatorKey="approval"
+                state={state}
+                delta={lastDelta?.approval}
+              />
+              <IndicatorCell
+                label="経済"
+                indicatorKey="economy"
+                state={state}
+                delta={lastDelta?.economy}
+              />
+              <IndicatorCell
+                label="財政"
+                indicatorKey="finance"
+                state={state}
+                delta={lastDelta?.finance}
+              />
+              <IndicatorCell
+                label="外交安保"
+                indicatorKey="diplomacy"
+                state={state}
+                delta={lastDelta?.diplomacy}
+              />
+              <IndicatorCell
+                label="環境"
+                indicatorKey="environment"
+                state={state}
+                delta={lastDelta?.environment}
+                last
+              />
             </div>
           </div>
         </div>
@@ -134,27 +164,44 @@ export function Layout({ children, primaryAction, hint }: LayoutProps) {
 
 function IndicatorCell({
   label,
-  value,
+  indicatorKey,
+  state,
+  delta,
   last,
 }: {
   label: string;
-  value: number;
+  indicatorKey: keyof NationalIndicators;
+  state: GameState;
+  delta?: number;
   last?: boolean;
 }) {
+  const value = state.indicators[indicatorKey];
   // Heatmap accent: low values lean vermilion, high lean ink-strong
   const rounded = Math.round(value);
   const tone = rounded >= 60 ? 'text-ink' : rounded >= 40 ? 'text-ink-soft' : 'text-vermilion';
 
+  // 過去最大6ターンの推移 + 現在値で sparkline 用データを構築
+  const sparkData = [
+    ...state.history.turns.slice(-6).map((t) => t.indicatorsAtEnd[indicatorKey]),
+    value,
+  ];
+
   return (
-    <div
-      className={`px-3 py-1.5 ${last ? '' : 'border-r border-ink/40'} flex items-baseline justify-between gap-2`}
-    >
-      <span className="font-display text-[10px] sm:text-xs uppercase tracking-widest text-ink-soft truncate">
-        {label}
-      </span>
-      <span className={`font-mono tabular font-bold text-base sm:text-lg leading-none ${tone}`}>
-        {rounded}
-      </span>
+    <div className={`px-3 py-1.5 ${last ? '' : 'border-r border-ink/40'} flex flex-col gap-0.5`}>
+      <div className="flex items-baseline justify-between gap-2">
+        <span className="font-display text-[10px] sm:text-xs uppercase tracking-widest text-ink-soft truncate">
+          {label}
+        </span>
+        <IndicatorDelta delta={delta} className="text-[10px]" />
+      </div>
+      <div className="flex items-baseline justify-between gap-2">
+        <span className={`font-mono tabular font-bold text-base sm:text-lg leading-none ${tone}`}>
+          {rounded}
+        </span>
+        <div className="flex-1 min-w-0 max-w-[60%]">
+          <MiniSparkline data={sparkData} height={12} />
+        </div>
+      </div>
     </div>
   );
 }
