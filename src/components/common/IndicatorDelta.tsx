@@ -25,13 +25,20 @@ export function IndicatorDelta({
       <span className={`font-mono tabular text-xs text-ink-faint ${className}`}>{emptyLabel}</span>
     );
   }
-  const isPositive = delta > 0;
+  // 表示用に丸めた値を先に算出し、丸め結果が 0 のときは
+  // 「▲ +0」のような不自然な表示を避けて emptyLabel を返す。
+  const display = decimal ? Number(delta.toFixed(1)) : Math.round(delta);
+  if (display === 0) {
+    return (
+      <span className={`font-mono tabular text-xs text-ink-faint ${className}`}>{emptyLabel}</span>
+    );
+  }
+  const isPositive = display > 0;
   // 通常の指標: 上昇 = 良い、下降 = 悪い
   // トレンド: 上昇 = 悪化、下降 = 改善 (inverted)
   const isBad = inverted ? isPositive : !isPositive;
   const arrow = isPositive ? '▲' : '▼';
   const sign = isPositive ? '+' : '';
-  const display = decimal ? delta.toFixed(1) : Math.round(delta);
   return (
     <span
       className={`font-mono tabular text-xs font-bold ${isBad ? 'text-vermilion' : 'text-ink'} ${className}`}
