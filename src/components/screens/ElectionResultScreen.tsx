@@ -8,6 +8,7 @@ import { REGISTRY } from '@/data/registry';
 import { rollEventsForTurn } from '@/engine/event';
 import { useGameStore } from '@/stores/gameStore';
 import { useUiStore } from '@/stores/uiStore';
+import { useEffect, useState } from 'react';
 
 export function ElectionResultScreen() {
   const state = useGameStore((s) => s.state);
@@ -86,41 +87,125 @@ export function ElectionResultScreen() {
           <div className="space-y-2">
             {state.parties
               .slice()
-              .sort((a, b) => b.seats - a.seats)
-              .map((p) => {
+              .sort((a, b) => {
+                // プレイヤー党を最上段に固定、それ以外は議席数で降順
+                if (a.isPlayer) return -1;
+                if (b.isPlayer) return 1;
+                return b.seats - a.seats;
+              })
+              .map((p, idx) => {
                 const seats = p.seats;
                 const previous = lastElection?.seatsPerParty[p.id] ?? 0;
-                const delta = seats - previous;
                 return (
-                  <div key={p.id} className="space-y-1">
-                    <div className="flex justify-between text-sm items-baseline">
-                      <span className={p.isPlayer ? 'font-semibold' : ''}>
-                        {p.name}
-                        {p.isPlayer && (
-                          <Badge variant="secondary" className="ml-2">
-                            あなた
-                          </Badge>
-                        )}
-                      </span>
-                      <span className="font-mono">
-                        {seats} 議席
-                        {delta !== 0 && (
-                          <span
-                            className={`ml-1 text-xs ${delta > 0 ? 'text-green-600' : 'text-red-600'}`}
-                          >
-                            ({delta > 0 ? '+' : ''}
-                            {delta})
-                          </span>
-                        )}
-                      </span>
-                    </div>
-                    <Progress value={(seats / houseTotal) * 100} />
-                  </div>
+                  <PartySeatRow
+                    key={p.id}
+                    name={p.name}
+                    isPlayer={p.isPlayer}
+                    previousSeats={previous}
+                    finalSeats={seats}
+                    houseTotal={houseTotal}
+                    majority={majority}
+                    delayMs={idx * 120}
+                  />
                 );
               })}
           </div>
         </CardContent>
       </Card>
     </Layout>
+  );
+}
+
+interface PartySeatRowProps {
+  name: string;
+  isPlayer: boolean;
+  previousSeats: number;
+  finalSeats: number;
+  houseTotal: number;
+  majority: number;
+  delayMs: number;
+}
+
+/**
+ * 議席数を「前回 → 今回」へカウントアップアニメで表示する行。
+ * - 開始まで delayMs 待機 (順番に開く演出)
+ * - 800ms かけて requestAnimationFrame で数値補間
+ * - 過半数到達党には hanko 風スタンプ
+ */
+function PartySeatRow({
+  name,
+  isPlayer,
+  previousSeats,
+  finalSeats,
+  houseTotal,
+  majority,
+  delayMs,
+}: PartySeatRowProps) {
+  const [displaySeats, setDisplaySeats] = useState(previousSeats);
+  const [revealed, setRevealed] = useState(false);
+
+  useEffect(() => {
+    const startTimer = setTimeout(() => {
+      setRevealed(true);
+      const durationMs = 800;
+      const startTime = performance.now();
+      let rafId = 0;
+      const tick = (now: number) => {
+        const t = Math.min(1, (now - startTime) / durationMs);
+        // easeOutQuad
+        const eased = 1 - (1 - t) ** 2;
+        const value = Math.round(previousSeats + (finalSeats - previousSeats) * eased);
+        setDisplaySeats(value);
+        if (t < 1) rafId = requestAnimationFrame(tick);
+      };
+      rafId = requestAnimationFrame(tick);
+      return () => cancelAnimationFrame(rafId);
+    }, delayMs);
+    return () => clearTimeout(startTimer);
+  }, [delayMs, previousSeats, finalSeats]);
+
+  const delta = finalSeats - previousSeats;
+  const reachedMajority = finalSeats >= majority;
+
+  return (
+    <div className={`space-y-1 ${isPlayer ? 'border-l-2 border-vermilion pl-3 -ml-3' : ''}`}>
+      <div className="flex justify-between text-sm items-center gap-2">
+        <span className={`flex items-baseline gap-2 ${isPlayer ? 'font-semibold' : ''}`}>
+          {name}
+          {isPlayer && (
+            <Badge variant="secondary" className="ml-1">
+              あなた
+            </Badge>
+          )}
+          {reachedMajority && (
+            <span
+              className="hanko relative inline-flex shrink-0"
+              style={{
+                width: '2.2rem',
+                height: '2.2rem',
+                fontSize: '0.6rem',
+                marginLeft: '0.25rem',
+              }}
+            >
+              過半数
+            </span>
+          )}
+        </span>
+        <span className="font-mono tabular flex items-baseline gap-2">
+          <span className="text-base font-bold">{displaySeats} 議席</span>
+          {revealed && delta !== 0 && (
+            <span
+              className={`text-xs font-bold animate-in fade-in slide-in-from-right-2 duration-300 ${
+                delta > 0 ? 'text-ink' : 'text-vermilion'
+              }`}
+            >
+              ({delta > 0 ? '+' : ''}
+              {delta})
+            </span>
+          )}
+        </span>
+      </div>
+      <Progress value={(displaySeats / houseTotal) * 100} />
+    </div>
   );
 }
