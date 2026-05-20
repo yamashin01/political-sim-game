@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { REGISTRY } from '@/data/registry';
+import { combineChanges } from '@/engine/indicators';
 import { useGameStore } from '@/stores/gameStore';
 import { useUiStore } from '@/stores/uiStore';
 import type { IndicatorChanges } from '@/types';
@@ -55,11 +56,13 @@ export function EventScreen() {
     if (hasChoices && !choiceId) return;
     resolveEvent(event.id, choiceId ?? undefined);
     // 効果と「決着ヘッドライン」を組み立ててトースト表示。終了時に遷移。
+    // gameStore.resolveEvent と同じ加算ロジック (combineChanges) を使い、
+    // 同一指標キーが重複するときに UI 表示とゲーム実態がズレないようにする。
     const chosen = hasChoices && choiceId ? event.choices?.find((c) => c.id === choiceId) : null;
-    const combinedEffects: IndicatorChanges = {
-      ...(event.immediateEffects ?? {}),
-      ...(chosen?.effects ?? {}),
-    };
+    const combinedEffects: IndicatorChanges = combineChanges(
+      event.immediateEffects ?? {},
+      chosen?.effects ?? {},
+    );
     const headline = chosen ? `${event.name} — ${chosen.label}で決着` : `${event.name} — 受け止め`;
     setToast({ headline, effects: combinedEffects });
   };

@@ -57,9 +57,9 @@ export function HeadlineToast({
       aria-live="polite"
       className="fixed inset-0 z-50 flex items-start justify-center pt-10 sm:pt-16 px-4 pointer-events-none"
     >
-      {/* dim backdrop */}
+      {/* dim backdrop — pointer-events-auto でクリックを吸収し、トースト表示中の誤操作 (フッターボタン等への意図しない遷移) を防ぐ */}
       <div
-        className={`absolute inset-0 bg-ink/10 ${
+        className={`absolute inset-0 bg-ink/10 pointer-events-auto ${
           phase === 'in' ? 'animate-in fade-in duration-200' : 'animate-out fade-out duration-300'
         }`}
       />

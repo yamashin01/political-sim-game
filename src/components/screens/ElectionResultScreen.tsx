@@ -147,11 +147,14 @@ function PartySeatRow({
   const [revealed, setRevealed] = useState(false);
 
   useEffect(() => {
+    // setTimeout のコールバック内の return は useEffect の cleanup として扱われないため、
+    // rafId を useEffect スコープに持ち上げ、cleanup で両方キャンセルする。
+    // アンマウント後の setDisplaySeats 呼び出し (React 警告 / メモリリーク) を防ぐ。
+    let rafId = 0;
     const startTimer = setTimeout(() => {
       setRevealed(true);
       const durationMs = 800;
       const startTime = performance.now();
-      let rafId = 0;
       const tick = (now: number) => {
         const t = Math.min(1, (now - startTime) / durationMs);
         // easeOutQuad
@@ -161,9 +164,11 @@ function PartySeatRow({
         if (t < 1) rafId = requestAnimationFrame(tick);
       };
       rafId = requestAnimationFrame(tick);
-      return () => cancelAnimationFrame(rafId);
     }, delayMs);
-    return () => clearTimeout(startTimer);
+    return () => {
+      clearTimeout(startTimer);
+      cancelAnimationFrame(rafId);
+    };
   }, [delayMs, previousSeats, finalSeats]);
 
   const delta = finalSeats - previousSeats;
