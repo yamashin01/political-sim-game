@@ -1,4 +1,5 @@
 import { ExplanationBox } from '@/components/common/ExplanationBox';
+import { IndicatorDelta } from '@/components/common/IndicatorDelta';
 import { InfoTooltip } from '@/components/common/InfoTooltip';
 import { Layout } from '@/components/common/Layout';
 import { Badge } from '@/components/ui/badge';
@@ -9,8 +10,16 @@ import { REGISTRY } from '@/data/registry';
 import { evaluatePolicyPassage } from '@/engine/policy';
 import { useGameStore } from '@/stores/gameStore';
 import { useUiStore } from '@/stores/uiStore';
-import type { Policy, PolicyCategory } from '@/types';
+import type { IndicatorChanges, Policy, PolicyCategory } from '@/types';
 import { useMemo, useState } from 'react';
+
+const EFFECT_LABEL_MAP: Record<string, string> = {
+  approval: '支持',
+  economy: '経済',
+  finance: '財政',
+  diplomacy: '外交',
+  environment: '環境',
+};
 
 const CATEGORIES: { id: PolicyCategory; label: string }[] = [
   { id: 'tax_finance', label: '税制財政' },
@@ -71,19 +80,41 @@ export function PolicyScreen() {
           <CardHeader>
             <CardTitle>政策の通過結果</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2">
+          <CardContent className="space-y-3">
             {results.length === 0 && <div className="text-sm">提出した政策はありません。</div>}
-            {results.map((r) => {
+            {results.map((r, idx) => {
               const policy = REGISTRY.policies[r.policyId];
               return (
                 <div
                   key={r.policyId}
-                  className="flex justify-between rounded-md border p-3 items-center"
+                  className="flex items-start gap-4 border-b border-dashed border-ink/40 pb-3 last:border-b-0 last:pb-0"
                 >
-                  <span>{policy?.name ?? r.policyId}</span>
-                  <Badge variant={r.passed ? 'default' : 'destructive'}>
-                    {r.passed ? '通過' : '否決'}
-                  </Badge>
+                  <span
+                    className="hanko relative shrink-0 animate-in zoom-in fade-in"
+                    style={{
+                      width: '2.6rem',
+                      height: '2.6rem',
+                      fontSize: '0.95rem',
+                      borderColor: r.passed ? 'hsl(var(--vermilion))' : 'hsl(var(--ink-faint))',
+                      color: r.passed ? 'hsl(var(--vermilion))' : 'hsl(var(--ink-faint))',
+                      animationDuration: '320ms',
+                      animationDelay: `${idx * 80}ms`,
+                      animationFillMode: 'backwards',
+                    }}
+                  >
+                    {r.passed ? '可' : '否'}
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-display font-bold text-base">
+                      {policy?.name ?? r.policyId}
+                    </div>
+                    {policy && r.passed && <PolicyEffects effects={policy.effects} />}
+                    {policy && !r.passed && (
+                      <div className="font-serif-jp text-xs text-ink-soft mt-1">
+                        — 議席不足等のため否決 (効果は発生せず)
+                      </div>
+                    )}
+                  </div>
                 </div>
               );
             })}
@@ -203,15 +234,25 @@ export function PolicyScreen() {
 }
 
 function formatEffects(eff: Record<string, number | undefined>): string {
-  const map: Record<string, string> = {
-    approval: '支持',
-    economy: '経済',
-    finance: '財政',
-    diplomacy: '外交',
-    environment: '環境',
-  };
   return Object.entries(eff)
     .filter(([, v]) => v !== undefined && v !== 0)
-    .map(([k, v]) => `${map[k] ?? k}${(v as number) > 0 ? '+' : ''}${v}`)
+    .map(([k, v]) => `${EFFECT_LABEL_MAP[k] ?? k}${(v as number) > 0 ? '+' : ''}${v}`)
     .join(' / ');
+}
+
+function PolicyEffects({ effects }: { effects: IndicatorChanges }) {
+  const entries = Object.entries(effects).filter(([, v]) => v !== undefined && v !== 0);
+  if (entries.length === 0) {
+    return <div className="font-serif-jp text-xs text-ink-faint mt-1 italic">— 効果なし</div>;
+  }
+  return (
+    <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
+      {entries.map(([k, v]) => (
+        <span key={k} className="flex items-baseline gap-1">
+          <span className="font-display text-[11px] text-ink-soft">{EFFECT_LABEL_MAP[k] ?? k}</span>
+          <IndicatorDelta delta={v as number} />
+        </span>
+      ))}
+    </div>
+  );
 }
