@@ -7,6 +7,7 @@ import { turnLabel } from '@/engine/turn';
 import { useGameStore } from '@/stores/gameStore';
 import { useUiStore } from '@/stores/uiStore';
 import type { IndicatorChanges, NationalIndicators, TrendState } from '@/types';
+import { useRef } from 'react';
 
 const INDICATOR_LABELS: { key: keyof NationalIndicators; label: string }[] = [
   { key: 'approval', label: '支持率' },
@@ -37,9 +38,17 @@ export function TurnSummaryScreen() {
   const setPhase = useUiStore((s) => s.setPhase);
   const enqueueEvents = useUiStore((s) => s.enqueueEvents);
 
+  const advancingRef = useRef(false);
+
   if (!state) return null;
 
   const handleNext = () => {
+    // 連打・ダブルクリックで rollOpposition / advance が多重実行されないようにガード。
+    // (DashboardScreen の wrap_up 分岐と同様の対策。setScreen はバッチされるため
+    //  純粋な currentScreen チェックでは間に合わないので ref フラグで防御する)
+    if (advancingRef.current) return;
+    advancingRef.current = true;
+
     const shouldElection = rollOpposition();
     if (shouldElection) {
       triggerElection();
@@ -109,7 +118,10 @@ export function TurnSummaryScreen() {
       </div>
 
       <ExplanationBox title="本日の総括の読み方" kicker="編集主幹より">
-        当ターンに起きたことを「号外」として総括します。指標の変化・通過した政策・対応イベント・トレンド進行を1ページで確認できます。「次号へ」を押すと選挙判定や次ターンの準備に進みます。
+        当ターンに起きたことを「号外」として総括します。指標の変化・通過した政策・対応イベント・トレンド進行を1ページで確認できます。
+        {isFinalTurn
+          ? '「結果発表へ」を押すと最終評価とエンディングに進みます。'
+          : '「次号へ」を押すと選挙判定や次ターンの準備に進みます。'}
       </ExplanationBox>
 
       {/* ─── COLUMN LAYOUT ─────────────────────────────────────── */}
@@ -350,7 +362,7 @@ export function TurnSummaryScreen() {
       <div className="rise rise-d3 mt-10 pt-3 border-t-2 border-ink flex items-baseline justify-between text-[10px] smallcaps font-mono tabular text-ink-faint">
         <span>政 局 報 · 号 外 · 編集部</span>
         <span className="font-display tracking-widest">❖ ❖ ❖</span>
-        <span>次号は「次号へ」より発刊</span>
+        <span>{isFinalTurn ? '本号をもって終刊 — 結果発表へ' : '次号は「次号へ」より発刊'}</span>
       </div>
     </Layout>
   );
